@@ -46,7 +46,7 @@ def parse(email,pw,kw,l,driverfile):
     username.send_keys(email)
     time.sleep(random.randint(3,5))
     pword = driver.find_element_by_id("password")
-
+ 
     pword.send_keys(pw)
     time.sleep(random.randint(3,5))
     driver.find_element_by_xpath("//button[@type='submit']").click()
