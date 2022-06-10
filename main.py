@@ -21,13 +21,14 @@ def create_table(conn, create_table_sql):
         print(e)
 
 def addLine(conn, task):
-    sql = ''' INSERT INTO tasks(title,name,location,field,mode,size,job) VALUES(?,?,?,?,?,?,?) '''
+    sql = ''' INSERT INTO tasks(title,name,location,field,mode,size,job,python,SQL)
+              VALUES(?,?,?,?,?,?,?,?,?) '''
     cur = conn.cursor()
     cur.execute(sql, task)
     conn.commit()
     return cur.lastrowid
 
-def parse(email,pw,kw,l):
+def parse(email,pw,kw,l,driverfile):
     title_list=[]
     location_list=[]
     size_list=[]
@@ -37,7 +38,7 @@ def parse(email,pw,kw,l):
     field_list=[]
     op= webdriver.ChromeOptions()
     op.add_argument('headless')
-    driver = webdriver.Chrome(executable_path=r"your chromedriver.exe directory", options=op)
+    driver = webdriver.Chrome(executable_path=driverfile, options=op)
     driver.get("https://linkedin.com/uas/login")
     driver.set_window_size(1400,1000)
     time.sleep(3)
@@ -66,7 +67,7 @@ def parse(email,pw,kw,l):
         n=25*p
         if n==0:
             n=1
-        driver.get(f"https://www.linkedin.com/jobs/search/?geoId=103644278&keywords={str(kw).replace(' ','%20')}&location={str(l).replace(' ','%20')}&start={n}")
+        driver.get(f"https://www.linkedin.com/jobs/search/?geoId=103644278&keywords={str(kw).replace(' ','%20')}&location={str(l.title()).replace(' ','%20')}&start={n}")
         time.sleep(3)
         for i in range(0,25):
             # try:
@@ -110,10 +111,12 @@ def parse(email,pw,kw,l):
         time.sleep(5)
     return title_list,location_list,size_list,detail_list,name_list,mode_list,field_list
 
-def main(email,pw,kw,l):
-    database = "linkedIn.db"
 
-    sql_create_table = """ CREATE TABLE IF NOT EXISTS tasks (title text,name text,location text,field text,mode text,size text,job text); """
+
+def main(email,pw,kw,l,driverfile):
+    database = r"C:\Users\bb971\Desktop\linkedIn.db"
+
+    sql_create_table = """ CREATE TABLE IF NOT EXISTS tasks (title text,name text,location text,field text,mode text,size text,job text,python text,SQL text); """
 
     # create a database connection
     conn = create_connection(database)
@@ -125,10 +128,19 @@ def main(email,pw,kw,l):
     else:
         print("Error! cannot create the database connection.")
     with conn:
-        title_list,location_list,size_list,detail_list,name_list,mode_list,field_list=parse(email,pw,kw,l)
+        title_list,location_list,size_list,detail_list,name_list,mode_list,field_list=parse(email,pw,kw,l,driverfile)
         for i in range(len(title_list)):
-            addLine(conn, (title_list[i],name_list[i],location_list[i],field_list[i],mode_list[i],size_list[i],detail_list[i]))
+            if 'python' in str(detail_list[i]).lower():
+                p='v'
+            else:
+                p=''
+            if 'sql' in str(detail_list[i]).lower():
+                s = 'v'
+            else:
+                s=''
+            addLine(conn, (title_list[i],name_list[i],location_list[i],field_list[i],mode_list[i],size_list[i],detail_list[i],p,s))
+
 
 if __name__ == '__main__':
-    main('your email','your password','job title','location')
+    main('your email','your password','your keywords','location','your chromerdriver directory')
 
