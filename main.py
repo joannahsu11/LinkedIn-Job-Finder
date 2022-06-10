@@ -110,7 +110,7 @@ def parse(email,pw,kw,l):
         time.sleep(5)
     return title_list,location_list,size_list,detail_list,name_list,mode_list,field_list
 
-def main():
+def main(email,pw,kw,l):
     database = "linkedIn.db"
 
     sql_create_table = """ CREATE TABLE IF NOT EXISTS tasks (title text,name text,location text,field text,mode text,size text,job text); """
@@ -125,10 +125,10 @@ def main():
     else:
         print("Error! cannot create the database connection.")
     with conn:
-        title_list,location_list,size_list,detail_list,name_list,mode_list,field_list=parse('your email','your password','job title','location')
+        title_list,location_list,size_list,detail_list,name_list,mode_list,field_list=parse(email,pw,kw,l)
         for i in range(len(title_list)):
             addLine(conn, (title_list[i],name_list[i],location_list[i],field_list[i],mode_list[i],size_list[i],detail_list[i]))
 
 if __name__ == '__main__':
-    main()
+    main('your email','your password','job title','location')
 
