@@ -5,11 +5,6 @@ import time
 import random
 
 def create_connection(db_file):
-    """ create a database connection to the SQLite database
-        specified by db_file
-    :param db_file: database file
-    :return: Connection object or None
-    """
     conn = None
     try:
         conn = sqlite3.connect(db_file)
@@ -26,8 +21,7 @@ def create_table(conn, create_table_sql):
         print(e)
 
 def addLine(conn, task):
-    sql = ''' INSERT INTO tasks(title,name,location,field,mode,size,job)
-              VALUES(?,?,?,?,?,?,?) '''
+    sql = ''' INSERT INTO tasks(title,name,location,field,mode,size,job) VALUES(?,?,?,?,?,?,?) '''
     cur = conn.cursor()
     cur.execute(sql, task)
     conn.commit()
@@ -115,8 +109,6 @@ def parse(email,pw,kw,l):
             time.sleep(2)
         time.sleep(5)
     return title_list,location_list,size_list,detail_list,name_list,mode_list,field_list
-
-
 
 def main():
     database = "linkedIn.db"
