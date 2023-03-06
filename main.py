@@ -5,7 +5,7 @@ import sqlite3
 from sqlite3 import Error
 import time
 
-def funcA():
+def start_running():
     def create_connection(db_file):
         conn = None
         try:
@@ -156,7 +156,7 @@ def funcA():
 
 root = Tk()
 root.geometry('400x300')
-button = Button(root,text='Click',command=lambda :funcA())
+button = Button(root,text='Click',command=lambda :start_running())
 button.place(x=140,y=250)
 
 
