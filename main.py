@@ -1,4 +1,4 @@
-#modified date: 3/5/2023
+# Author: Shaoyu Hsu (aka Joanna)
 #
 from tkinter import *
 from selenium.webdriver.common.by import By
