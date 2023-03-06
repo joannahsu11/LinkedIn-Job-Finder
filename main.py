@@ -1,199 +1,187 @@
+from tkinter import *
+from selenium.webdriver.common.by import By
 from selenium import webdriver
 import sqlite3
 from sqlite3 import Error
 import time
-import random
 
-def create_connection(db_file):
-    conn = None
-    try:
-        conn = sqlite3.connect(db_file)
-    except Error as e:
-        print(e)
+def funcA():
+    def create_connection(db_file):
+        conn = None
+        try:
+            conn = sqlite3.connect(db_file)
+        except Error as e:
+            print(e)
 
-    return conn
+        return conn
 
-def create_table(conn, create_table_sql):
-    try:
-        c = conn.cursor()
-        c.execute(create_table_sql)
-    except Error as e:
-        print(e)
+    def addLine(conn, tablename, results):
+        print(results)
+        sql=f'INSERT INTO "{tablename}" (title,company,"job level",location,"company info",detail) VALUES(?,?,?,?,?,?)'
+        cur = conn.cursor()
+        cur.execute(sql, results)
+        conn.commit()
+        return cur.lastrowid
 
-def addLine(conn, tablename,cols,results):
-    sql = f'INSERT INTO "{tablename}" ("title","company","job level","location","field","mode","size","job","experience",'
-    for name in cols[:-1]:
-        sql = sql + f'"{name}",'
-    sql = sql + f'"{cols[-1]}") VALUES(?,?,?,?,?,?,?,?,?,'
-    for i in cols[:-1]:
-        sql = sql + f'?,'
-    sql = sql + f'?)'
-    cur = conn.cursor()
-    cur.execute(sql, results)
-    conn.commit()
-    return cur.lastrowid
+    def getInfo(kws, overview):
+        result = []
+        for keywords in kws:
+            s = ''
+            for line in overview.split('.'):
+                if keywords.lower() in line.lower():
+                    s = s + line + '\n\n'
+            result.append = s
+        return result
 
-def getKeyword(job,key):
-    for i in range(len(job.splitlines())):
-        line=str(job.splitlines()[i])
-        if key.lower() in line.lower():
-            return line
-    return ''
+    def create_table(conn, create_table_sql):
+        try:
+            c = conn.cursor()
+            c.execute(create_table_sql)
+        except Error as e:
+            print(e)
 
-def k1_and_k2(job,key1,key2):
-    for i in range(len(job.splitlines())):
-        line = str(job.splitlines()[i])
-        if key1 in line.lower() and key2 in line.lower():
-            return line
-    return ''
-
-def k1_or_k2(job,key1,key2):
-    for i in range(len(job.splitlines())):
-        line = str(job.splitlines()[i])
-        if key1 in line.lower() or key2 in line.lower():
-            return line
-    return ''
-
-def parse(email,pw,kw,l,cols):
-    title_list=[]
-    location_list=[]
-    size_list=[]
-    mode_list=[]
-    company_list=[]
-    level_list=[]
-    detail_list=[]
-    field_list=[]
-    experience_list=[]
-    op= webdriver.ChromeOptions()
-    op.add_argument('headless')
-    driver = webdriver.Chrome(executable_path='chromedriver.exe', options=op)
-    driver.get("https://linkedin.com/uas/login")
-    driver.set_window_size(1400,1000)
-    time.sleep(3)
-    username = driver.find_element_by_id("username")
-    username.send_keys(email)
-    time.sleep(random.randint(3,5))
-    pword = driver.find_element_by_id("password")
-
-    pword.send_keys(pw)
-    time.sleep(random.randint(3,5))
-    driver.find_element_by_xpath("//button[@type='submit']").click()
-
-    time.sleep(13)
-    url=f"https://www.linkedin.com/jobs/search/?geoId=103644278&keywords={str(kw).replace(' ','%20')}&location={str(l.title()).replace(' ','%20')}"
-    driver.get(url)
-    time.sleep(5)
-    left=driver.execute_script(f"return document.querySelector('body > div.application-outlet > div.authentication-outlet > div.job-search-ext > div.jobs-search-two-pane__wrapper > div > section.jobs-search__left-rail > div > div')")
-    driver.execute_script("arguments[0].scrollTop = arguments[1]", left, 3000)
-    time.sleep(5)
-    lastpage_i=driver.execute_script(f"return document.querySelectorAll('body > div.application-outlet > div.authentication-outlet > div.job-search-ext > div.jobs-search-two-pane__wrapper > div > section.jobs-search__left-rail > div > div > section>div>ul>li').length")
-    t=driver.execute_script(f"return document.querySelectorAll('body > div.application-outlet > div.authentication-outlet > div.job-search-ext > div.jobs-search-two-pane__wrapper > div > section.jobs-search__left-rail > div > div > section>div>ul>li')[{lastpage_i-1}].querySelector('button')").get_attribute('textContent')
-    page=int(t.replace(' ',''))+1
-
-    print(page)
-    allskills_dict={}
-    for c in cols:
-        allskills_dict[c]=[]
-    #for p in range(page):
-    for p in range(5):
-        print(f'now on page {p+1}')
-        n=25*p
-        if n==0:
-            n=1
+    def parse(driver,url):
+        title_list = []
+        location_list = []
+        companyinfo_list = []
+        company_list = []
+        level_list = []
+        detail_list = []
         driver.get(url)
-        time.sleep(3)
-        for i in range(0,25):
+        left = driver.find_element(By.CSS_SELECTOR,'#main > div > section.scaffold-layout__list>div')
+        for i in range(1,26):
+            print('\t',i)
+            driver.execute_script("arguments[0].scrollTop = arguments[1]", left, 3000)
+            driver.find_element(By.CSS_SELECTOR,f'#main > div > section.scaffold-layout__list > div > ul>li:nth-child({i})').click()
+            time.sleep(2)
             try:
-                driver.execute_script(f"return document.querySelectorAll('body > div.application-outlet > div.authentication-outlet > div.job-search-ext > div.jobs-search-two-pane__wrapper > div > section.jobs-search__left-rail > div > div > ul>li')[{i}].querySelector('div>div').click()")
-                time.sleep(3)
-                try:
-                    title = driver.execute_script(f"return document.querySelector('body > div.application-outlet > div.authentication-outlet > div.job-search-ext > div.jobs-search-two-pane__wrapper > div > section.jobs-search__right-rail > div > div > div:nth-child(1) > div > div:nth-child(1) > div > div.relative > div.jobs-unified-top-card__content--two-pane>a')").text
-                except:
-                    title='N/A'
-                try:
-                    company = driver.execute_script(f"return document.querySelectorAll('body > div.application-outlet > div.authentication-outlet > div.job-search-ext > div.jobs-search-two-pane__wrapper > div > section.jobs-search__right-rail > div > div > div:nth-child(1) > div > div:nth-child(1) > div > div.relative > div.jobs-unified-top-card__content--two-pane>div.jobs-unified-top-card__primary-description>span')[0].querySelector('span')").text
-                except:
-                    company='N/A'
-                try:
-                    level = driver.execute_script(f"return document.querySelector('body > div.application-outlet > div.authentication-outlet > div.job-search-ext > div.jobs-search-two-pane__wrapper > div > section.jobs-search__right-rail > div > div > div:nth-child(1) > div > div:nth-child(1) > div > div.relative > div.jobs-unified-top-card__content--two-pane > div.mt5.mb2 > ul > li:nth-child(1) > span')").text
-                except:
-                    level='N/A'
-                try:
-                    location = driver.execute_script(f"return document.querySelectorAll('body > div.application-outlet > div.authentication-outlet > div.job-search-ext > div.jobs-search-two-pane__wrapper > div > section.jobs-search__right-rail > div > div > div:nth-child(1) > div > div:nth-child(1) > div > div.relative > div.jobs-unified-top-card__content--two-pane>div.jobs-unified-top-card__primary-description>span')[0].querySelectorAll('span')[1]").text
-                except:
-                    location='N/A'
-                try:
-                    mode = driver.execute_script(f"return document.querySelectorAll('body > div.application-outlet > div.authentication-outlet > div.job-search-ext > div.jobs-search-two-pane__wrapper > div > section.jobs-search__right-rail > div > div > div:nth-child(1) > div > div:nth-child(1) > div > div.relative > div.jobs-unified-top-card__content--two-pane>div.jobs-unified-top-card__primary-description>span')[0].querySelectorAll('span')[2]").text
-                except:
-                    mode='N/A'
-                company_info = driver.execute_script(f"return document.querySelector('body > div.application-outlet > div.authentication-outlet > div.job-search-ext > div.jobs-search-two-pane__wrapper > div > section.jobs-search__right-rail > div > div > div:nth-child(1) > div > div:nth-child(1) > div > div.relative > div.jobs-unified-top-card__content--two-pane > div.mt5.mb2 > ul > li:nth-child(2) > span')").text
-                try:
-                    size=company_info.split(' ')[0]
-                except:
-                    size='N/A'
-                try:
-                    field=company_info.split(' · ')[1]
-                except:
-                    field='N/A'
-                print(title,company,level,location,field,mode,size)
-                detail = (driver.execute_script(f"return document.querySelector('#job-details > span')").text)
-                title_list.append(title)
-                location_list.append(location)
-                size_list.append(size)
-                company_list.append(company)
-                level_list.append(level)
-                mode_list.append(mode)
-                detail_list.append(detail)
-                field_list.append(field)
-                experience_list.append(k1_and_k2(detail,'experience','year'))
-                for col in cols:
-                    allskills_dict[col]=allskills_dict[col]+[getKeyword(detail,col)]
-                time.sleep(2)
+                title = (driver.find_element(By.CSS_SELECTOR,"#main > div > section.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.job-view-layout.jobs-details>div>div>div>div>div.relative>div>a>h2").get_attribute('textContent')).lstrip()
             except:
-                title_list.append('')
-                location_list.append('')
-                size_list.append('')
-                level_list.append('')
-                company_list.append('')
-                mode_list.append('')
-                detail_list.append('')
-                field_list.append('')
-                experience_list.append('')
-                for col in cols:
-                    allskills_dict[col]=allskills_dict[col]+['']
+                title='N/A'
+            try:
+                company =(driver.find_element(By.CSS_SELECTOR,"#main > div > section.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.job-view-layout.jobs-details>div>div>div>div>div.relative>div>div>span>span>a").get_attribute('textContent')).lstrip()
+            except:
+                company='N/A'
+            try:
+                level = ((driver.find_element(By.CSS_SELECTOR,"#main > div > section.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.job-view-layout.jobs-details>div>div>div>div>div.relative>div>div.mt5.mb2>ul>li>span").get_attribute('textContent')).split(' · ')[1]).lstrip()
+            except:
+                level='N/A'
+            try:
+                location = (driver.find_element(By.CSS_SELECTOR,"#main > div > section.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.job-view-layout.jobs-details>div>div>div>div>div.relative>div>div>span>span.jobs-unified-top-card__bullet").get_attribute('textContent')).lstrip()
+            except:
+                location='N/A'
+            try:
+                company_info = (driver.find_element(By.CSS_SELECTOR,"#main > div > section.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.job-view-layout.jobs-details>div>div>div>div>div.relative>div>div.mt5.mb2>ul>li.jobs-unified-top-card__job-insight:nth-child(2)>span").get_attribute('textContent')).lstrip()
+            except:
+                company_info='N/A'
+            try:
+                detail = (driver.find_element(By.CSS_SELECTOR,"#job-details").get_attribute('textContent')).lstrip()
+            except:
+                detail='N/A'
 
-        time.sleep(2)
-    return title_list,location_list,size_list,detail_list,company_list,level_list,mode_list,field_list,experience_list,allskills_dict
+            title_list.append(title)
+            location_list.append(location)
+            companyinfo_list.append(company_info)
+            company_list.append(company)
+            level_list.append(level)
+            detail_list.append(detail)
 
 
+        return title_list, location_list, companyinfo_list, detail_list, company_list, level_list
 
-def main(email,pw,kw,l,dbtable,skillsets):
+    def getkw(strings):
+        return strings.split(',')
+
     database = "linkedIn.db"
-
-    sql_create_table = f'CREATE TABLE IF NOT EXISTS "{dbtable}" ("title" text,"company" text,"job level" text,"location" text,"field" text,"mode" text,"size" text,"job" text,"experience" text,'
-    for name in skillsets[:-1]:
-        sql_create_table = sql_create_table + f'"{name}" text,'
-    sql_create_table = sql_create_table + f'"{skillsets[-1]}" text)'
-    print(sql_create_table)
-    # create a database connection
+    sql_create_table=f'CREATE TABLE IF NOT EXISTS "{table.get()}" ("title" text,"company" text,"job level" text,"location" text,"company info" text,"detail" text)'
     conn = create_connection(database)
 
-    # create tables
     if conn is not None:
-        # create projects table
         create_table(conn, sql_create_table)
     else:
         print("Error! cannot create the database connection.")
+    title_list = []
+    company_list = []
+    level_list = []
+    location_list = []
+    companyinfo_list = []
+    detail_list = []
+    op = webdriver.ChromeOptions()
+    op.add_argument('headless')
+    chromedriver = '{your chromedriver directory'
+    driver = webdriver.Chrome(executable_path=chromedriver, options=op)
+    start = 0
+    driver.get("https://linkedin.com/uas/login")
+    driver.maximize_window()
+    time.sleep(1)
+    username = driver.find_element(By.ID,"username")
+    username.send_keys('joannahsusy@gmail.com')
+    time.sleep(1)
+    pword = driver.find_element(By.ID,"password")
+
+    pword.send_keys('H224562418h')
+    time.sleep(1)
+    driver.find_element(By.XPATH,"//button[@type='submit']").click()
+
+    time.sleep(3)
     with conn:
-        title_list,location_list,size_list,detail_list,company_list,level_list,mode_list,field_list,experience_list,skills_dict=parse(email,pw,kw,l,skillsets)
+        url=f"https://www.linkedin.com/jobs/search/?currentJobId=3286478083&geoId=90000084&keywords=selenium%20python&location=San%20Francisco%20Bay%20Area&refresh=true&start={start}"
+        driver.get(url)
+        whole = driver.find_element(By.CSS_SELECTOR,
+                                    'body > div.application-outlet > div.authentication-outlet > div.scaffold-layout.scaffold-layout--breakpoint-xl.scaffold-layout--list-detail.scaffold-layout--reflow.scaffold-layout--has-list-detail.jobs-search-two-pane__layout > div').get_attribute(
+            'textContent')
+        time.sleep(2)
+        while 'No matching jobs found.' not in whole:
+            time.sleep(1)
+            start = start + 25
+            url = f"https://www.linkedin.com/jobs/search/?currentJobId=3286478083&geoId=90000084&keywords=selenium%20python&location=San%20Francisco%20Bay%20Area&refresh=true&start={start}"
+            driver.get(url)
+            whole = driver.find_element(By.CSS_SELECTOR,
+                                        'body > div.application-outlet > div.authentication-outlet > div.scaffold-layout.scaffold-layout--breakpoint-xl.scaffold-layout--list-detail.scaffold-layout--reflow.scaffold-layout--has-list-detail.jobs-search-two-pane__layout > div').get_attribute(
+                'textContent')
+
+
+            title, location, companyinfo, detail, company, level = parse(driver,url)
+
+            title_list = title_list+title
+            company_list = company_list+company
+            level_list = level_list+level
+            location_list = location_list+location
+            companyinfo_list = companyinfo_list+companyinfo
+            detail_list = detail_list+detail
+
         for i in range(len(title_list)):
-            mytuple = (title_list[i], company_list[i], level_list[i], location_list[i], field_list[i], mode_list[i],
-                       size_list[i], detail_list[i], experience_list[i])
-            for s in skills_dict:
-                mytuple = mytuple + (skills_dict[s][i],)
-            addLine(conn, dbtable,skillsets,mytuple)
+            addLine(conn,table.get(),[title_list[i], company_list[i], level_list[i], location_list[i], companyinfo_list[i], detail_list[i]])
+    root.destroy()
+
+root = Tk()
+root.geometry('400x300')
+button = Button(root,text='Click',command=lambda :funcA())
+button.place(x=140,y=250)
 
 
-if __name__ == '__main__':
-    main('your linkedin account','password','keyword youd like to search','location','table name in database',["skill1","skill2","..."])
+Label(root, text="account").place(x=4,y=10)
+acc=Entry(root,width=30)
+acc.place(x=140,y=10)
 
+Label(root, text="password").place(x=4,y=40)
+pw=Entry(root,width=30)
+pw.place(x=140,y=40)
+
+Label(root, text="job title").place(x=4,y=70)
+job=Entry(root,width=30)
+job.place(x=140,y=70)
+
+Label(root, text="location").place(x=4,y=100)
+loc=Entry(root,width=30)
+loc.place(x=140,y=100)
+
+Label(root, text="database table name").place(x=4,y=130)
+table=Entry(root,width=30)
+table.place(x=140,y=130)
+
+Label(root, text="skillsets").place(x=4,y=160)
+keywords=Entry(root,width=40)
+keywords.place(x=140,y=160)
+
+root.mainloop()
