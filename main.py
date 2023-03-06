@@ -1,6 +1,8 @@
-# Author: Shaoyu Hsu (aka Joanna)
+# Author: Shaoyu Hsu (aka Joanna Hsu)
 #
 from tkinter import *
+
+import selenium
 from selenium.webdriver.common.by import By
 from selenium import webdriver
 import sqlite3
@@ -31,14 +33,14 @@ def start_running():
         cur.execute(sql, results)
         conn.commit()
         return cur.lastrowid
-    
+
     def sep(results):
         skills = results[-1]
         results = results[:-1]
         for a in skills.keys():
             results.append(skills[a])
         return results
-    
+
     def getInfo(kws, overview):
         result = {}
         for keywords in kws:
@@ -134,7 +136,7 @@ def start_running():
     companyinfo_list = []
     detail_list = []
     op = webdriver.ChromeOptions()
-    op.add_argument('headless')
+    #op.add_argument('headless')
     chromedriver = r'chromedriver.exe'
     driver = webdriver.Chrome(executable_path=chromedriver, options=op)
     start = 0
@@ -149,37 +151,44 @@ def start_running():
     pword.send_keys('H224562418h')
     time.sleep(1)
     driver.find_element(By.XPATH,"//button[@type='submit']").click()
-
-    time.sleep(3)
+    time.sleep(13)
     with conn:
         url=f"https://www.linkedin.com/jobs/search/?currentJobId=3286478083&geoId=90000084&keywords=selenium%20python&location=San%20Francisco%20Bay%20Area&refresh=true&start={start}"
         driver.get(url)
-        whole = driver.find_element(By.CSS_SELECTOR,
-                                    'body > div.application-outlet > div.authentication-outlet > div.scaffold-layout.scaffold-layout--breakpoint-xl.scaffold-layout--list-detail.scaffold-layout--reflow.scaffold-layout--has-list-detail.jobs-search-two-pane__layout > div').get_attribute(
-            'textContent')
-        time.sleep(2)
-        while 'No matching jobs found.' not in whole:
-            time.sleep(1)
-            start = start + 25
-            url = f"https://www.linkedin.com/jobs/search/?currentJobId=3286478083&geoId=90000084&keywords=selenium%20python&location=San%20Francisco%20Bay%20Area&refresh=true&start={start}"
-            driver.get(url)
+        try:
             whole = driver.find_element(By.CSS_SELECTOR,
                                         'body > div.application-outlet > div.authentication-outlet > div.scaffold-layout.scaffold-layout--breakpoint-xl.scaffold-layout--list-detail.scaffold-layout--reflow.scaffold-layout--has-list-detail.jobs-search-two-pane__layout > div').get_attribute(
                 'textContent')
 
+            time.sleep(2)
+            while 'No matching jobs found.' not in whole:
+                time.sleep(1)
+                start = start + 25
+                url = f"https://www.linkedin.com/jobs/search/?currentJobId=3286478083&geoId=90000084&keywords=selenium%20python&location=San%20Francisco%20Bay%20Area&refresh=true&start={start}"
+                driver.get(url)
+                whole = driver.find_element(By.CSS_SELECTOR,
+                                            'body > div.application-outlet > div.authentication-outlet > div.scaffold-layout.scaffold-layout--breakpoint-xl.scaffold-layout--list-detail.scaffold-layout--reflow.scaffold-layout--has-list-detail.jobs-search-two-pane__layout > div').get_attribute(
+                    'textContent')
 
-            title, location, companyinfo, detail, company, level, kw = parse(driver,url,getkw(keywords.get()))
 
-            title_list = title_list+title
-            company_list = company_list+company
-            level_list = level_list+level
-            location_list = location_list+location
-            companyinfo_list = companyinfo_list+companyinfo
-            detail_list = detail_list+detail
-            kw_list = kw_list + kw
-        for i in range(len(title_list)):
-            addLine(conn,table.get(),[title_list[i], company_list[i], level_list[i], location_list[i], companyinfo_list[i], detail_list[i],kw_list[i]],getkw(keywords.get()))
-    root.destroy()
+                title, location, companyinfo, detail, company, level, kw = parse(driver,url,getkw(keywords.get()))
+
+                title_list = title_list+title
+                company_list = company_list+company
+                level_list = level_list+level
+                location_list = location_list+location
+                companyinfo_list = companyinfo_list+companyinfo
+                detail_list = detail_list+detail
+                kw_list = kw_list + kw
+            for i in range(len(title_list)):
+                addLine(conn,table.get(),[title_list[i], company_list[i], level_list[i], location_list[i], companyinfo_list[i], detail_list[i],kw_list[i]],getkw(keywords.get()))
+        except selenium.common.exceptions.NoSuchElementException:
+            print('''Need Security Check. Comment out line "op.add_argument('headless')" to do security check manually ''')
+            root.destroy()
+    try:
+        root.destroy()
+    except:
+        print()
 
 root = Tk()
 root.geometry('400x300')
@@ -212,5 +221,3 @@ keywords=Entry(root,width=40)
 keywords.place(x=140,y=160)
 
 root.mainloop()
-
-
