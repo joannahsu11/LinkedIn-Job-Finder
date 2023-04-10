@@ -1,7 +1,7 @@
 This program is to extract data from LinkedIn (with authentication) and displays the outputs
 
 1.	Install the necessary packages: tkinter and selenium.
-2.	Download the ChromeDriver executable and update the path in line 100 in search_with_authentication.py accordingly.
+2.	Download the ChromeDriver executable and update the path in line 101 in search_with_authentication.py accordingly.
 3.	Run the search_with_authentication.py
 4.	Enter your email.
 5.	Enter your password.
