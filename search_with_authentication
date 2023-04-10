@@ -1,0 +1,245 @@
+from tkinter import *
+import tkinter as tk
+import selenium
+from selenium.webdriver.common.by import By
+from selenium import webdriver
+import time
+
+
+class Page:
+    def __init__(self, pageno, mode, company, level, location, title, easyapply):
+        self.pageno = pageno
+        self.mode = mode
+        self.company = company
+        self.level = level
+        self.location = location
+        self.title = title
+        self.easyapply = easyapply
+
+    def get_url(self):
+        return f"https://www.linkedin.com/jobs/search/?&f_WT={self.mode.replace(',', '%2C')}&f_AL={str(self.easyapply).lower()}&f_C={self.company.get()}&f_E={self.level.replace(',', '%2C')}&location={(self.location.get()).replace(' ', '%20')}&keywords={self.title.replace(' ', '%20')}&start={(self.pageno - 1) * 25}"
+
+
+class Job:
+    def get_info(self):
+        self.driver.find_element(By.CSS_SELECTOR,
+                                 f'#main > div > div.scaffold-layout__list > div > ul>li:nth-child({self.id})').click()
+        time.sleep(1)
+        try:
+            title = (self.driver.find_element(By.CSS_SELECTOR,
+                                              "#main > div > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.jobs-unified-top-card__container--two-pane > div.jobs-unified-top-card__content--two-pane>a>h2").get_attribute(
+                'textContent')).lstrip()
+        except:
+            title = 'N/A'
+        try:
+            url = (self.driver.find_element(By.CSS_SELECTOR,
+                                            "#main > div > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.jobs-unified-top-card__container--two-pane > div.jobs-unified-top-card__content--two-pane>a").get_attribute(
+                'href')).lstrip()
+        except:
+            url = 'N/A'
+        try:
+            company = (self.driver.find_element(By.CSS_SELECTOR,
+                                                "#main > div > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.jobs-unified-top-card__container--two-pane > div.jobs-unified-top-card__content--two-pane > div.jobs-unified-top-card__primary-description > span.jobs-unified-top-card__subtitle-primary-grouping.t-black > span.jobs-unified-top-card__company-name>a").get_attribute(
+                'textContent')).strip()
+        except:
+            company = 'N/A'
+        try:
+            jd = (self.driver.find_element(By.CSS_SELECTOR,
+                                           "#main > div > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div.jobs-box--fadein.jobs-box--full-width.jobs-box--with-cta-large.jobs-description.jobs-description--reformatted>article>div>div>span").get_attribute(
+                'textContent')).lstrip()
+        except:
+            jd = 'N/A'
+        return url, title, company, jd
+
+    def filtered(self):
+        def hasKeywords(content, mustAll, mustEither):
+            return all([val.lower() in content.lower() for val in mustAll]) and any(
+                substring.lower() in content.lower() for substring in mustEither)
+
+        hasMatched = hasKeywords(self.get_info()[3], self.hasAll, self.hasEither)
+        if hasMatched:
+            print(f'({self.get_info()[2]}) {self.get_info()[1]}: {self.get_info()[0]}')
+
+
+    def __init__(self, driver, id, hasAll, hasEither):
+        self.driver = driver
+        self.id = id
+        self.hasAll = hasAll
+        self.hasEither = hasEither
+        self.jd = self.get_info()[2]
+        self.title = self.get_info()[0]
+        self.company = self.get_info()[1]
+
+
+def start(title, email, pw, hasAll, hasOne, easyapply):
+    def pre_mode(modes):
+        onsite, remote, hybrid = modes
+        mode = []
+        if onsite != 0:
+            mode.append(str(onsite))
+        if remote != 0:
+            mode.append(str(remote))
+        if hybrid != 0:
+            mode.append(str(hybrid))
+        mode = ','.join(mode)
+        return mode
+
+    def pre_level(levels):
+        internship, entry, associate = levels
+        level = []
+        if internship != 0:
+            level.append(str(internship))
+        if entry != 0:
+            level.append(str(entry))
+        if associate != 0:
+            level.append(str(associate))
+        level = ','.join(level)
+        return level
+
+    op = webdriver.ChromeOptions()
+    # op.add_argument('headless')
+    chromedriver = r'chromedriver.exe'
+    driver = webdriver.Chrome(executable_path=chromedriver, options=op)
+
+    driver.get("https://linkedin.com/uas/login")
+    driver.maximize_window()
+    time.sleep(1)
+    username = driver.find_element(By.ID, "username")
+    username.send_keys(email)
+    time.sleep(1)
+    pword = driver.find_element(By.ID, "password")
+
+    pword.send_keys(pw)
+    time.sleep(1)
+    driver.find_element(By.XPATH, "//button[@type='submit']").click()
+    time.sleep(1)
+    mode=pre_mode([onsite.get(), remote.get(), hybrid.get()])
+    level=pre_level([internship.get(), entry.get(), associate.get()])
+    url = f"https://www.linkedin.com/jobs/search/?&f_WT={mode.replace(',', '%2C')}&f_C={company.get()}&f_E={level.replace(',', '%2C')}&location={(location.get()).replace(' ', '%20')}&keywords={title.replace(' ', '%20')}"
+
+    driver.get(url)
+    try:
+        driver.find_element(By.CSS_SELECTOR,
+                            'body > div.application-outlet > div.authentication-outlet > div.scaffold-layout.scaffold-layout--breakpoint-xl.scaffold-layout--list-detail.scaffold-layout--reflow.scaffold-layout--has-list-detail.jobs-search-two-pane__layout > div').get_attribute(
+            'textContent')
+    except selenium.common.exceptions.NoSuchElementException:
+        print('''Need Security Check. Comment out line "op.add_argument('headless')" to do security check manually. This program will pause for 10 seconds.''')
+        for i in range(10, -1, -1):
+            time.sleep(1)
+            print(i)
+
+    if chosen_pagenum.get()=='All':
+        max=51
+    else:
+        max=int(chosen_pagenum.get())+1
+    for pageno in range(1,max):
+
+        url = Page.get_url(Page(pageno, mode, company,level, location, title,
+                                easyapply))
+        driver.get(url)
+        time.sleep(1)
+        left = driver.find_element(By.CSS_SELECTOR, '#main > div>div>div>ul')
+        for i in range(1, 26):
+            print(pageno,'-',i)
+            driver.execute_script("arguments[0].scrollTo(0, {})".format(300*i),left)
+            try:
+                job = Job(driver, i, hasAll.split(','), hasOne.split(','))
+                job.filtered()
+            except selenium.common.exceptions.NoSuchElementException:
+                break
+        if('No matching jobs found.' in driver.find_element(By.CSS_SELECTOR,
+                                    'body > div.application-outlet > div.authentication-outlet > div.scaffold-layout.scaffold-layout--breakpoint-xl.scaffold-layout--list-detail.scaffold-layout--reflow.scaffold-layout--has-list-detail.jobs-search-two-pane__layout > div').get_attribute(
+            'textContent')):
+            root.destroy()
+            break
+    root.destroy()
+
+
+root = Tk()
+root.geometry('500x400')
+
+tk.Label(root, text='Email').place(x=10, y=10)
+email = tk.Entry(root, width=30)
+email.place(x=100, y=10)
+
+tk.Label(root, text='Password').place(x=10, y=40)
+pw = tk.Entry(root, width=30)
+pw.place(x=100, y=40)
+
+tk.Label(root, text='Job Title').place(x=10, y=70)
+title = tk.Entry(root, width=30)
+title.place(x=100, y=70)
+tk.Label(root, text='*').place(x=290, y=68)
+
+tk.Label(root, text='Location').place(x=10, y=100)
+location = tk.Entry(root, width=30)
+location.place(x=100, y=100)
+tk.Label(root, text='(one location only)').place(x=290, y=100)
+
+tk.Label(root, text='Must have all of the following keyword(s)').place(x=10, y=130)
+mustHaveAll = tk.Entry(root, width=30)
+mustHaveAll.place(x=250, y=130)
+tk.Label(root, text='*').place(x=440, y=128)
+
+tk.Label(root, text='Must have one of the following keyword(s)').place(x=10, y=160)
+mustHaveOne = tk.Entry(root, width=30)
+mustHaveOne.place(x=250, y=160)
+tk.Label(root, text='*').place(x=440, y=158)
+
+tk.Label(root, text='Company code ("f_C" thingy in url)').place(x=10, y=190)
+company = tk.Entry(root, width=10)
+company.place(x=210, y=190)
+tk.Label(root, text='(one company code only)').place(x=280, y=188)
+
+onsite = tk.IntVar()
+remote = tk.IntVar()
+hybrid = tk.IntVar()
+
+m1 = tk.Checkbutton(root, text='On-site', variable=onsite, onvalue=1, offvalue=0)
+m1.place(x=120, y=220)
+
+m2 = tk.Checkbutton(root, text='Remote', variable=remote, onvalue=2, offvalue=0)
+m2.place(x=205, y=220)
+
+m3 = tk.Checkbutton(root, text='Hybrid', variable=hybrid, onvalue=3, offvalue=0)
+m3.place(x=290, y=220)
+
+internship = tk.IntVar()
+entry = tk.IntVar()
+associate = tk.IntVar()
+easyapply = tk.BooleanVar()
+
+l1 = tk.Checkbutton(root, text='Internship', variable=internship, onvalue=1, offvalue=0)
+l1.place(x=120, y=250)
+
+l2 = tk.Checkbutton(root, text='Entry level', variable=entry, onvalue=2, offvalue=0)
+l2.place(x=205, y=250)
+
+l3 = tk.Checkbutton(root, text='Associate', variable=associate, onvalue=3, offvalue=0)
+l3.place(x=290, y=250)
+
+easyapply_bt = tk.Checkbutton(root, text='Easy Apply', variable=easyapply, onvalue=True, offvalue=False)
+easyapply_bt.place(x=205, y=280)
+
+tk.Label(root,text="Show ").place(x=170, y=315)
+tk.Label(root,text="pages").place(x=271, y=315)
+
+options = [
+    '1','3','5','10','15','All'
+]
+
+chosen_pagenum = StringVar()
+chosen_pagenum.set("All")
+drop = OptionMenu(root ,chosen_pagenum ,*options )
+drop.place(x=210, y=310)
+
+button = Button(root, text='Start',
+                command=lambda: start(title.get(), email.get(), pw.get(),
+                                      mustHaveAll.get(), mustHaveOne.get(), easyapply.get()))
+button.place(x=220, y=360)
+tk.Label(root, text='* separate your answers by ","').place(x=290, y=360)
+warning = tk.Label(root, text='Only jobs that match your requirements will be displayed')
+
+warning.configure(background='yellow')
+warning.place(x=90, y=410)
+root.mainloop()
