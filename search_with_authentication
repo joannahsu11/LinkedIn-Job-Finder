@@ -1,3 +1,5 @@
+# Author: Joanna Hsu
+
 from tkinter import *
 import tkinter as tk
 import selenium
@@ -7,7 +9,7 @@ import time
 
 
 class Page:
-    def __init__(self, pageno, mode, company, level, location, title, easyapply):
+    def __init__(self, pageno, mode, company, level, location, title, easyapply,network):
         self.pageno = pageno
         self.mode = mode
         self.company = company
@@ -15,9 +17,10 @@ class Page:
         self.location = location
         self.title = title
         self.easyapply = easyapply
+        self.network = network
 
     def get_url(self):
-        return f"https://www.linkedin.com/jobs/search/?&f_WT={self.mode.replace(',', '%2C')}&f_AL={str(self.easyapply).lower()}&f_C={self.company.get()}&f_E={self.level.replace(',', '%2C')}&location={(self.location.get()).replace(' ', '%20')}&keywords={self.title.replace(' ', '%20')}&start={(self.pageno - 1) * 25}"
+        return f"https://www.linkedin.com/jobs/search/?&f_WT={self.mode.replace(',', '%2C')}&f_AL={str(self.easyapply).lower()}&f_JIYN={str(self.network).lower()}&f_C={self.company.get()}&f_E={self.level.replace(',', '%2C')}&location={(self.location.get()).replace(' ', '%20')}&keywords={self.title.replace(' ', '%20')}&start={(self.pageno - 1) * 25}"
 
 
 class Job:
@@ -59,6 +62,8 @@ class Job:
         hasMatched = hasKeywords(self.get_info()[3], self.hasAll, self.hasEither)
         if hasMatched:
             print(f'({self.get_info()[2]}) {self.get_info()[1]}: {self.get_info()[0]}')
+            #self.driver.execute_script(By.CSS_SELECTOR,'#main > div > div.scaffold-layout__detail.overflow-x-hidden.jobs-search__job-details > div > div.job-view-layout.jobs-details > div:nth-child(1) > div > div:nth-child(1) > div > div.relative.jobs-unified-top-card__container--two-pane > div.jobs-unified-top-card__content--two-pane > div:nth-child(4) > div > button').click()
+
 
 
     def __init__(self, driver, id, hasAll, hasEither):
@@ -71,7 +76,7 @@ class Job:
         self.company = self.get_info()[1]
 
 
-def start(title, email, pw, hasAll, hasOne, easyapply):
+def start(title, email, pw, hasAll, hasOne, easyapply,network):
     def pre_mode(modes):
         onsite, remote, hybrid = modes
         mode = []
@@ -135,7 +140,7 @@ def start(title, email, pw, hasAll, hasOne, easyapply):
     for pageno in range(1,max):
 
         url = Page.get_url(Page(pageno, mode, company,level, location, title,
-                                easyapply))
+                                easyapply,network))
         driver.get(url)
         time.sleep(1)
         left = driver.find_element(By.CSS_SELECTOR, '#main > div>div>div>ul')
@@ -208,6 +213,7 @@ internship = tk.IntVar()
 entry = tk.IntVar()
 associate = tk.IntVar()
 easyapply = tk.BooleanVar()
+network = tk.BooleanVar()
 
 l1 = tk.Checkbutton(root, text='Internship', variable=internship, onvalue=1, offvalue=0)
 l1.place(x=120, y=250)
@@ -219,7 +225,10 @@ l3 = tk.Checkbutton(root, text='Associate', variable=associate, onvalue=3, offva
 l3.place(x=290, y=250)
 
 easyapply_bt = tk.Checkbutton(root, text='Easy Apply', variable=easyapply, onvalue=True, offvalue=False)
-easyapply_bt.place(x=205, y=280)
+easyapply_bt.place(x=120, y=280)
+
+network_bt = tk.Checkbutton(root, text='In your network', variable=network, onvalue=True, offvalue=False)
+network_bt.place(x=205, y=280)
 
 tk.Label(root,text="Show ").place(x=170, y=315)
 tk.Label(root,text="pages").place(x=271, y=315)
@@ -235,7 +244,7 @@ drop.place(x=210, y=310)
 
 button = Button(root, text='Start',
                 command=lambda: start(title.get(), email.get(), pw.get(),
-                                      mustHaveAll.get(), mustHaveOne.get(), easyapply.get()))
+                                      mustHaveAll.get(), mustHaveOne.get(), easyapply.get(),network.get()))
 button.place(x=220, y=360)
 tk.Label(root, text='* separate your answers by ","').place(x=290, y=360)
 warning = tk.Label(root, text='Only jobs that match your requirements will be displayed')
