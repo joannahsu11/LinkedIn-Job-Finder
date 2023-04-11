@@ -15,4 +15,5 @@ This program is to extract data from LinkedIn (with authentication) and displays
 13. Click the checkboxe next to "Easy apply" if you only want to include easy-apply jobs in your search
 14. Click the checkboxe next to "In your network" if you only want to include jobs in your network in your search
 15.	Click the "Start" button to start the search.
-16.	Wait for the program to finish running. The program will print out the job titles, companies, and URLs of any job openings that match your search criteria.
+16.	Choose how many pages of results you'd like to see.
+17.	Wait for the program to finish running. The program will print out the job titles, companies, and URLs of any job openings that match your search criteria.
